@@ -34,6 +34,8 @@ pub struct JournaledState {
     /// Note that this not include newly loaded accounts, account and storage
     /// is considered warm if it is found in the `State`.
     pub warm_preloaded_addresses: HashSet<Address>,
+    /// RISE NOTE: Preloaded data to notify BlockSTM about explicit reads if they are used.
+    pub preloaded_accounts: HashSet<Address>,
 }
 
 impl JournaledState {
@@ -57,6 +59,7 @@ impl JournaledState {
             depth: 0,
             spec,
             warm_preloaded_addresses,
+            preloaded_accounts: HashSet::new(),
         }
     }
 
@@ -111,6 +114,7 @@ impl JournaledState {
             // kept, see [Self::new]
             spec: _,
             warm_preloaded_addresses: _,
+            preloaded_accounts: _,
         } = self;
 
         *transient_storage = TransientStorage::default();
@@ -532,7 +536,7 @@ impl JournaledState {
         let account = match self.state.entry(address) {
             Entry::Occupied(entry) => entry.into_mut(),
             Entry::Vacant(vac) => vac.insert(
-                db.basic(address)
+                db.basic(address, true)
                     .map_err(EVMError::Database)?
                     .map(|i| i.into())
                     .unwrap_or(Account::new_not_existing()),
@@ -545,6 +549,7 @@ impl JournaledState {
                 entry.insert(EvmStorageSlot::new(storage));
             }
         }
+        self.preloaded_accounts.insert(address);
         Ok(account)
     }
 
@@ -556,10 +561,22 @@ impl JournaledState {
         db: &mut DB,
     ) -> Result<(&mut Account, bool), EVMError<DB::Error>> {
         Ok(match self.state.entry(address) {
-            Entry::Occupied(entry) => (entry.into_mut(), false),
+            Entry::Occupied(mut entry) => {
+                // TODO: Cleaner way to notify explicit read to DB.
+                if self.preloaded_accounts.contains(&address) {
+                    // NOTE: We reload info because the preloaded account may be mocked and
+                    // to be updated post execution...
+                    entry.get_mut().info = db
+                        .basic(address, false)
+                        .map_err(EVMError::Database)?
+                        .unwrap_or_default();
+                    self.preloaded_accounts.remove(&address);
+                }
+                (entry.into_mut(), false)
+            }
             Entry::Vacant(vac) => {
                 let account =
-                    if let Some(account) = db.basic(address).map_err(EVMError::Database)? {
+                    if let Some(account) = db.basic(address, false).map_err(EVMError::Database)? {
                         account.into()
                     } else {
                         Account::new_not_existing()
