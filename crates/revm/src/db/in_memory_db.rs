@@ -382,19 +382,31 @@ impl Database for BenchmarkDB {
         _is_preload: bool,
     ) -> Result<Option<AccountInfo>, Self::Error> {
         if address == Address::ZERO {
+            let nonce = 1;
+            let balance = U256::from(10000000);
+            let code_hash = self.1;
             return Ok(Some(AccountInfo {
-                nonce: 1,
-                balance: U256::from(10000000),
+                nonce,
+                previous_or_original_nonce: nonce,
+                balance,
+                previous_or_original_balance: balance,
                 code: Some(self.0.clone()),
-                code_hash: self.1,
+                code_hash,
+                previous_or_original_code_hash: code_hash,
             }));
         }
         if address == Address::with_last_byte(1) {
+            let nonce = 0;
+            let balance = U256::from(10000000);
+            let code_hash = KECCAK_EMPTY;
             return Ok(Some(AccountInfo {
-                nonce: 0,
-                balance: U256::from(10000000),
+                nonce,
+                previous_or_original_nonce: nonce,
+                balance,
+                previous_or_original_balance: balance,
                 code: None,
-                code_hash: KECCAK_EMPTY,
+                code_hash,
+                previous_or_original_code_hash: code_hash,
             }));
         }
         Ok(None)
