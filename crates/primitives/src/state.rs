@@ -117,6 +117,11 @@ impl Account {
         self.info.is_empty()
     }
 
+    /// Is the account info changed?
+    pub fn is_info_changed(&self) -> bool {
+        self.info.is_changed()
+    }
+
     /// Returns an iterator over the storage slots that have been changed.
     ///
     /// See also [StorageSlot::is_changed]
@@ -185,13 +190,17 @@ impl StorageSlot {
 /// AccountInfo account information.
 #[derive(Clone, Debug, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+// RISE TODO: Fix tests
 pub struct AccountInfo {
     /// Account balance.
     pub balance: U256,
+    pub previous_or_original_balance: U256,
     /// Account nonce.
     pub nonce: u64,
+    pub previous_or_original_nonce: u64,
     /// code hash,
     pub code_hash: B256,
+    pub previous_or_original_code_hash: B256,
     /// code: if None, `code_by_hash` will be used to fetch it if code needs to be loaded from
     /// inside of `revm`.
     pub code: Option<Bytecode>,
@@ -199,11 +208,17 @@ pub struct AccountInfo {
 
 impl Default for AccountInfo {
     fn default() -> Self {
+        let balance = U256::ZERO;
+        let code_hash = KECCAK_EMPTY;
+        let nonce = 0;
         Self {
-            balance: U256::ZERO,
-            code_hash: KECCAK_EMPTY,
+            balance,
+            previous_or_original_balance: balance,
+            code_hash,
+            previous_or_original_code_hash: code_hash,
             code: Some(Bytecode::default()),
-            nonce: 0,
+            nonce,
+            previous_or_original_nonce: nonce,
         }
     }
 }
@@ -228,9 +243,12 @@ impl AccountInfo {
     pub fn new(balance: U256, nonce: u64, code_hash: B256, code: Bytecode) -> Self {
         Self {
             balance,
+            previous_or_original_balance: balance,
             nonce,
+            previous_or_original_nonce: nonce,
             code: Some(code),
             code_hash,
+            previous_or_original_code_hash: code_hash,
         }
     }
 
@@ -283,6 +301,13 @@ impl AccountInfo {
             balance,
             ..Default::default()
         }
+    }
+
+    // RISE TODO: More granularity (a function for each field)
+    fn is_changed(&self) -> bool {
+        self.balance != self.previous_or_original_balance
+            || self.nonce != self.previous_or_original_nonce
+            || self.code_hash != self.previous_or_original_code_hash
     }
 }
 

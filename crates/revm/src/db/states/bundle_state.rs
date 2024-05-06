@@ -704,8 +704,11 @@ mod tests {
         let address = Address::new([0x01; 20]);
         let acc1 = AccountInfo {
             balance: U256::from(10),
+            previous_or_original_balance: U256::from(10),
             nonce: 1,
+            previous_or_original_nonce: 1,
             code_hash: KECCAK_EMPTY,
+            previous_or_original_code_hash: KECCAK_EMPTY,
             code: None,
         };
 
@@ -755,8 +758,11 @@ mod tests {
                     None,
                     Some(AccountInfo {
                         nonce: 1,
+                        previous_or_original_nonce: 1,
                         balance: U256::from(10),
+                        previous_or_original_balance: U256::from(10),
                         code_hash: KECCAK_EMPTY,
+                        previous_or_original_code_hash: KECCAK_EMPTY,
                         code: None,
                     }),
                     HashMap::from([
@@ -769,8 +775,11 @@ mod tests {
                     None,
                     Some(AccountInfo {
                         nonce: 1,
+                        previous_or_original_nonce: 1,
                         balance: U256::from(10),
+                        previous_or_original_balance: U256::from(10),
                         code_hash: KECCAK_EMPTY,
+                        previous_or_original_code_hash: KECCAK_EMPTY,
                         code: None,
                     }),
                     HashMap::from([]),
@@ -797,8 +806,11 @@ mod tests {
                 None,
                 Some(AccountInfo {
                     nonce: 3,
+                    previous_or_original_nonce: 3,
                     balance: U256::from(20),
+                    previous_or_original_balance: U256::from(20),
                     code_hash: KECCAK_EMPTY,
+                    previous_or_original_code_hash: KECCAK_EMPTY,
                     code: None,
                 }),
                 HashMap::from([(slot1(), (U256::from(0), U256::from(15)))]),
@@ -807,8 +819,11 @@ mod tests {
                 account1(),
                 Some(Some(AccountInfo {
                     nonce: 1,
+                    previous_or_original_nonce: 1,
                     balance: U256::from(10),
+                    previous_or_original_balance: U256::from(10),
                     code_hash: KECCAK_EMPTY,
+                    previous_or_original_code_hash: KECCAK_EMPTY,
                     code: None,
                 })),
                 vec![(slot1(), U256::from(10))],
@@ -824,8 +839,11 @@ mod tests {
                 account1(),
                 AccountInfo {
                     nonce: 1,
+                    previous_or_original_nonce: 1,
                     balance: U256::from(10),
+                    previous_or_original_balance: U256::from(10),
                     code_hash: KECCAK_EMPTY,
+                    previous_or_original_code_hash: KECCAK_EMPTY,
                     code: None,
                 },
             )
@@ -838,8 +856,11 @@ mod tests {
                 account2(),
                 AccountInfo {
                     nonce: 1,
+                    previous_or_original_nonce: 1,
                     balance: U256::from(10),
+                    previous_or_original_balance: U256::from(10),
                     code_hash: KECCAK_EMPTY,
+                    previous_or_original_code_hash: KECCAK_EMPTY,
                     code: None,
                 },
             )
@@ -857,8 +878,11 @@ mod tests {
                 account1(),
                 AccountInfo {
                     nonce: 3,
+                    previous_or_original_nonce: 3,
                     balance: U256::from(20),
+                    previous_or_original_balance: U256::from(20),
                     code_hash: KECCAK_EMPTY,
+                    previous_or_original_code_hash: KECCAK_EMPTY,
                     code: None,
                 },
             )
@@ -872,8 +896,11 @@ mod tests {
                 account1(),
                 Some(Some(AccountInfo {
                     nonce: 1,
+                    previous_or_original_nonce: 1,
                     balance: U256::from(10),
+                    previous_or_original_balance: U256::from(10),
                     code_hash: KECCAK_EMPTY,
+                    previous_or_original_code_hash: KECCAK_EMPTY,
                     code: None,
                 })),
             )

@@ -245,12 +245,12 @@ pub fn execute_test_suite(
         // Create database and insert cache
         let mut cache_state = revm::CacheState::new(false);
         for (address, info) in unit.pre {
-            let acc_info = revm::primitives::AccountInfo {
-                balance: info.balance,
-                code_hash: keccak256(&info.code),
-                code: Some(Bytecode::new_raw(info.code)),
-                nonce: info.nonce,
-            };
+            let acc_info = revm::primitives::AccountInfo::new(
+                info.balance,
+                info.nonce,
+                keccak256(&info.code),
+                Bytecode::new_raw(info.code),
+            );
             cache_state.insert_account_with_storage(address, acc_info, info.storage);
         }
 

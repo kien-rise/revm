@@ -261,8 +261,11 @@ pub(crate) mod test_utils {
             test_utils::MOCK_CALLER,
             crate::primitives::AccountInfo {
                 nonce: 0,
+                previous_or_original_nonce: 0,
                 balance,
+                previous_or_original_balance: balance,
                 code_hash: B256::default(),
+                previous_or_original_code_hash: B256::default(),
                 code: None,
             },
         );
@@ -384,8 +387,11 @@ mod tests {
             contract,
             crate::primitives::AccountInfo {
                 nonce: 0,
+                previous_or_original_nonce: 0,
                 balance: bal,
+                previous_or_original_balance: bal,
                 code_hash: by.clone().hash_slow(),
+                previous_or_original_code_hash: by.clone().hash_slow(),
                 code: Some(by),
             },
         );
