@@ -194,20 +194,12 @@ impl StorageSlot {
 pub struct AccountInfo {
     /// Account balance.
     pub balance: U256,
-    #[cfg_attr(feature = "serde", serde(skip_serializing))]
-    #[cfg_attr(feature = "serde", serde(default))]
     pub previous_or_original_balance: U256,
     /// Account nonce.
     pub nonce: u64,
-    #[cfg_attr(feature = "serde", serde(skip_serializing))]
-    #[cfg_attr(feature = "serde", serde(default))]
     pub previous_or_original_nonce: u64,
     /// code hash,
-    #[cfg_attr(feature = "serde", serde(skip_serializing))]
-    #[cfg_attr(feature = "serde", serde(default))]
     pub code_hash: B256,
-    #[cfg_attr(feature = "serde", serde(skip_serializing))]
-    #[cfg_attr(feature = "serde", serde(default))]
     pub previous_or_original_code_hash: B256,
     /// code: if None, `code_by_hash` will be used to fetch it if code needs to be loaded from
     /// inside of `revm`.
