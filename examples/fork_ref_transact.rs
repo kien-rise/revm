@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
     let mut ethersdb = EthersDB::new(Arc::clone(&client), None).unwrap();
 
     // query basic properties of an account incl bytecode
-    let acc_info = ethersdb.basic(pool_address).unwrap().unwrap();
+    let acc_info = ethersdb.basic(pool_address, false).unwrap().unwrap();
 
     // query value of storage slot at account address
     let value = ethersdb.storage(pool_address, slot).unwrap();

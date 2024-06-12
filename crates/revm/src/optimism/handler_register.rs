@@ -32,10 +32,36 @@ pub fn optimism_handle_register<DB: Database, EXT>(handler: &mut EvmHandler<'_, 
         handler.pre_execution.deduct_caller = Arc::new(deduct_caller::<SPEC, EXT, DB>);
         // Refund is calculated differently then mainnet.
         handler.execution.last_frame_return = Arc::new(last_frame_return::<SPEC, EXT, DB>);
-        handler.post_execution.reward_beneficiary = Arc::new(reward_beneficiary::<SPEC, EXT, DB>);
+        handler.post_execution.reward_beneficiary =
+            Some(Box::new(reward_beneficiary::<SPEC, EXT, DB>));
         // In case of halt of deposit transaction return Error.
-        handler.post_execution.output = Arc::new(output::<SPEC, EXT, DB>);
-        handler.post_execution.end = Arc::new(end::<SPEC, EXT, DB>);
+        handler.post_execution.output = Box::new(output::<SPEC, EXT, DB>);
+        handler.post_execution.end = Box::new(end::<SPEC, EXT, DB>);
+    });
+}
+
+pub fn optimism_handle_register_without_reward_beneficiary<DB: Database, EXT>(
+    handler: &mut EvmHandler<'_, EXT, DB>,
+) {
+    spec_to_generic!(handler.cfg.spec_id, {
+        // validate environment
+        handler.validation.env = Arc::new(validate_env::<SPEC, DB>);
+        // Validate transaction against state.
+        handler.validation.tx_against_state = Arc::new(validate_tx_against_state::<SPEC, EXT, DB>);
+        // Load additional precompiles for the given chain spec.
+        handler.pre_execution.load_precompiles = Arc::new(load_precompiles::<SPEC, EXT, DB>);
+        // load l1 data
+        handler.pre_execution.load_accounts = Arc::new(load_accounts::<SPEC, EXT, DB>);
+        // An estimated batch cost is charged from the caller and added to L1 Fee Vault.
+        handler.pre_execution.deduct_caller = Arc::new(deduct_caller::<SPEC, EXT, DB>);
+        // Refund is calculated differently then mainnet.
+        handler.execution.last_frame_return = Arc::new(last_frame_return::<SPEC, EXT, DB>);
+        handler.post_execution.reward_beneficiary = Some(Box::new(
+            reward_beneficiary_without_coinbase::<SPEC, EXT, DB>,
+        ));
+        // In case of halt of deposit transaction return Error.
+        handler.post_execution.output = Box::new(output::<SPEC, EXT, DB>);
+        handler.post_execution.end = Box::new(end::<SPEC, EXT, DB>);
     });
 }
 
@@ -284,6 +310,63 @@ pub fn reward_beneficiary<SPEC: Spec, EXT, DB: Database>(
     Ok(())
 }
 
+/// Reward beneficiary with gas fee.
+#[inline]
+pub(crate) fn reward_beneficiary_without_coinbase<SPEC: Spec, EXT, DB: Database>(
+    context: &mut Context<EXT, DB>,
+    gas: &Gas,
+) -> Result<(), EVMError<DB::Error>> {
+    let is_deposit = context.evm.inner.env.tx.optimism.source_hash.is_some();
+
+    // transfer fee to coinbase/beneficiary.
+    // if !is_deposit {
+    //     mainnet::reward_beneficiary::<SPEC, EXT, DB>(context, gas)?;
+    // }
+
+    if !is_deposit {
+        // If the transaction is not a deposit transaction, fees are paid out
+        // to both the Base Fee Vault as well as the L1 Fee Vault.
+        let Some(l1_block_info) = &context.evm.inner.l1_block_info else {
+            return Err(EVMError::Custom(
+                "[OPTIMISM] Failed to load L1 block information.".to_string(),
+            ));
+        };
+
+        let Some(enveloped_tx) = &context.evm.inner.env.tx.optimism.enveloped_tx else {
+            return Err(EVMError::Custom(
+                "[OPTIMISM] Failed to load enveloped transaction.".to_string(),
+            ));
+        };
+
+        let l1_cost = l1_block_info.calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID);
+
+        // Send the L1 cost of the transaction to the L1 Fee Vault.
+        let (l1_fee_vault_account, _) = context
+            .evm
+            .inner
+            .journaled_state
+            .load_account(optimism::L1_FEE_RECIPIENT, &mut context.evm.inner.db)?;
+        l1_fee_vault_account.mark_touch();
+        l1_fee_vault_account.info.balance += l1_cost;
+
+        // Send the base fee of the transaction to the Base Fee Vault.
+        let (base_fee_vault_account, _) = context
+            .evm
+            .inner
+            .journaled_state
+            .load_account(optimism::BASE_FEE_RECIPIENT, &mut context.evm.inner.db)?;
+        base_fee_vault_account.mark_touch();
+        base_fee_vault_account.info.balance += context
+            .evm
+            .inner
+            .env
+            .block
+            .basefee
+            .mul(U256::from(gas.spent() - gas.refunded() as u64));
+    }
+    Ok(())
+}
+
 /// Main return handle, returns the output of the transaction.
 #[inline]
 pub fn output<SPEC: Spec, EXT, DB: Database>(
@@ -331,7 +414,7 @@ pub fn end<SPEC: Spec, EXT, DB: Database>(
                     context
                         .evm
                         .db
-                        .basic(caller)
+                        .basic(caller, false)
                         .unwrap_or_default()
                         .unwrap_or_default(),
                 );
