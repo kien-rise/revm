@@ -262,6 +262,7 @@ pub fn deduct_caller<SPEC: Spec, EXT, DB: Database>(
                 },
             ));
         }
+        dbg!(tx_l1_cost);
         caller_account.info.balance = caller_account.info.balance.saturating_sub(tx_l1_cost);
     }
     Ok(())
@@ -296,6 +297,7 @@ pub fn reward_beneficiary<SPEC: Spec, EXT, DB: Database>(
         };
 
         let l1_cost = l1_block_info.calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID);
+        dbg!(l1_cost);
 
         // Send the L1 cost of the transaction to the L1 Fee Vault.
         let (l1_fee_vault_account, _) = context

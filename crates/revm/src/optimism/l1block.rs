@@ -201,16 +201,16 @@ impl L1BlockInfo {
         // There is an edgecase where, for the very first Ecotone block (unless it is activated at Genesis), we must
         // use the Bedrock cost function. To determine if this is the case, we can check if the Ecotone parameters are
         // unset.
-        if self.empty_scalars {
+        if dbg!(self.empty_scalars) {
             return self.calculate_tx_l1_cost_bedrock(input, spec_id);
         }
 
-        let rollup_data_gas_cost = self.data_gas(input, spec_id);
-        let l1_fee_scaled = self.calculate_l1_fee_scaled_ecotone();
+        let rollup_data_gas_cost = dbg!(self.data_gas(input, spec_id));
+        let l1_fee_scaled = dbg!(self.calculate_l1_fee_scaled_ecotone());
 
-        l1_fee_scaled
+        dbg!(l1_fee_scaled
             .saturating_mul(rollup_data_gas_cost)
-            .wrapping_div(U256::from(1_000_000 * NON_ZERO_BYTE_COST))
+            .wrapping_div(U256::from(1_000_000 * NON_ZERO_BYTE_COST)))
     }
 
     /// Calculate the gas cost of a transaction based on L1 block data posted on L2, post-Fjord.
